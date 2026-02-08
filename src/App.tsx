@@ -3,7 +3,7 @@ import { Chess, Move, type Square } from 'chess.js'
 import { useEffect, useRef, useState } from 'react'
 import { CCCWebSocket } from './websocket'
 import type { Api } from '@lichess-org/chessground/api'
-import type { CCCLiveInfo, CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks } from './types'
+import type { CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks } from './types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import { CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from 'chart.js'
 import { EngineComponent } from './components/EngineComponent'
@@ -11,55 +11,9 @@ import { StandingsTable } from './components/StandingsTable'
 import { GameGraph } from './components/GameGraph'
 import type { Config } from '@lichess-org/chessground/config'
 import { ScheduleComponent } from './components/ScheduleComponent'
+import { StockfishWorker } from './components/StockfishWorker'
 import './App.css'
-
-class StockfishEngine {
-
-    worker: Worker
-    onMessage: ((message: string) => void) | null = null
-    currentFen: string | null = null
-    receivedBestMove: boolean = true
-
-    constructor() {
-        this.worker = new Worker("/stockfish-17.1-single-a496a04.js")
-        this.worker.onmessage = (e) => {
-            if (e.data.includes("bestmove"))
-                this.receivedBestMove = true
-            this.onMessage?.(e.data)
-        }
-        this.sendMessage("uci")
-    }
-
-    sendMessage(command: string) {
-        this.worker.postMessage(command)
-    }
-
-    async analyze(fen: string) {
-        if (this.currentFen === fen) return
-        this.currentFen = fen
-
-        this.sendMessage("stop")
-        const waitForReady = () => {
-            return new Promise<void>((resolve) => {
-                const check = () => {
-                    if (this.receivedBestMove) resolve()
-                    else setTimeout(check, 10)
-                };
-                check()
-            });
-        };
-        await waitForReady()
-
-        this.receivedBestMove = false
-        this.sendMessage(`position fen ${fen}`)
-        this.sendMessage("go infinite")
-    }
-
-    terminate() {
-        this.sendMessage("quit")
-        this.worker.terminate()
-    }
-}
+import { emptyLiveInfo, extractLiveInfoFromGame, type LiveInfoEntry } from './components/LiveInfo'
 
 const CLOCK_UPDATE_MS = 25
 
@@ -75,16 +29,16 @@ function App() {
     const game = useRef(new Chess())
     const ws = useRef(new CCCWebSocket("wss://ccc-api.gcp-prod.chess.com/ws"))
 
-    const stockfish = useRef<StockfishEngine>(null)
+    const stockfish = useRef<StockfishWorker>(null)
     const [fen, setFen] = useState(game.current.fen())
 
     const [_, setCccEventList] = useState<CCCEventsListUpdate>()
     const [cccEvent, setCccEvent] = useState<CCCEventUpdate>()
     const [clocks, setClocks] = useState<CCCClocks>({ binc: "0", winc: "0", btime: "0", wtime: "0", type: "clocks" })
 
-    const [liveInfosWhite, setLiveInfosWhite] = useState<(CCCLiveInfo | undefined)[]>([])
-    const [liveInfosBlack, setLiveInfosBlack] = useState<(CCCLiveInfo | undefined)[]>([])
-    const [liveInfosStockfish, setLiveInfosStockfish] = useState<(CCCLiveInfo | undefined)[]>([])
+    const [liveInfosWhite, setLiveInfosWhite] = useState<LiveInfoEntry[]>([])
+    const [liveInfosBlack, setLiveInfosBlack] = useState<LiveInfoEntry[]>([])
+    const [liveInfosStockfish, setLiveInfosStockfish] = useState<LiveInfoEntry[]>([])
 
     function updateBoard(lastMove: [Square, Square], arrowsOnly: boolean = false) {
         const arrows: DrawShape[] = []
@@ -172,45 +126,7 @@ function App() {
                 lastMove = game.current.history({ verbose: true }).at(-1)!!
                 updateBoard([lastMove.from, lastMove.to])
 
-                const liveInfosWhite: (CCCLiveInfo | undefined)[] = []
-                const liveInfosBlack: (CCCLiveInfo | undefined)[] = []
-                game.current.getComments().forEach((value, i) => {
-                    const data = value.comment.split(", ")
-
-                    if (data[0] === "book") return
-
-                    let score = data[0].split("/")[0]
-                    if (i % 2 === 1) {
-                        if (score.includes("+"))
-                            score = score.replace("+", "-")
-                        else
-                            score = score.replace("-", "+")
-                    }
-
-                    const liveInfo: CCCLiveInfo = {
-                        type: "liveInfo",
-                        info: {
-                            color: i % 2 === 0 ? "w" : "b",
-                            depth: data[0].split("/")[1].split(" ")[0],
-                            multipv: "1",
-                            hashfull: data[6].split("=")[1],
-                            name: "",
-                            nodes: data[3].split("=")[1],
-                            ply: i + 1,
-                            pv: "",
-                            score,
-                            seldepth: data[4].split("=")[1],
-                            speed: data[5].split("=")[1],
-                            tbhits: data[7].split("=")[1],
-                            time: data[0].split(" ")[1].split("s")[0].replace(".", ""),
-                        }
-                    }
-                    if (i % 2 === 0)
-                        liveInfosWhite[liveInfo.info.ply] = liveInfo
-                    else
-                        liveInfosBlack[liveInfo.info.ply] = liveInfo
-                })
-
+                const {liveInfosBlack, liveInfosWhite} = extractLiveInfoFromGame(game.current)
                 setLiveInfosWhite(liveInfosWhite)
                 setLiveInfosBlack(liveInfosBlack)
                 setLiveInfosStockfish([])
@@ -299,7 +215,7 @@ function App() {
     useEffect(() => {
         const clockTimer = setInterval(updateClocks, CLOCK_UPDATE_MS)
 
-        stockfish.current = new StockfishEngine()
+        stockfish.current = new StockfishWorker()
 
         return () => {
             clearInterval(clockTimer)
@@ -310,34 +226,10 @@ function App() {
     useEffect(() => {
         if (!stockfish.current) return
 
-        stockfish.current.onMessage = (message) => {
-            if (!message.startsWith("info depth")) return;
-            if (message.includes("currmove")) return;
-            if (game.current.getHeaders()["Event"] === "?") return;
-            
-            const data = message.split(" ")
+        stockfish.current.onMessage = (liveInfo, arrow) => {
+            if (game.current.getHeaders()["Event"] === "?") return
 
-            const liveInfo: CCCLiveInfo = {
-                type: "liveInfo",
-                info: {
-                    ply: 2 * game.current.moveNumber() - (game.current.turn() === "w" ? 1 : 0),
-                    color: game.current.turn() === "w" ? "white" : "black",
-                    depth: data[2],
-                    hashfull: data[15],
-                    multipv: data[6],
-                    name: "",
-                    nodes: data[11],
-                    pv: "",
-                    score: String(Number(data[9]) / 100),
-                    seldepth: data[4],
-                    speed: data[13],
-                    tbhits: "",
-                    time: "",
-                }
-            }
-
-            const bestmove = data[19]
-            stockfishArrow.current = bestmove && bestmove.length >= 4 ? { orig: bestmove.slice(0, 2) as Square, dest: bestmove.slice(2, 4) as Square, brush: "stockfish" } : null
+            stockfishArrow.current = arrow
             updateBoard(["a1", "a1"], true)
 
             setLiveInfosStockfish(data => {
@@ -349,8 +241,8 @@ function App() {
         stockfish.current.analyze(fen)
     }, [fen])
 
-    const latestLiveInfoBlack = liveInfosBlack.at(-1) ?? { type: "liveInfo", info: { color: "b", depth: "0", hashfull: "0", multipv: "1", name: "", nodes: "0", ply: 0, pv: "", score: "0", seldepth: "0", speed: "0", tbhits: "0", time: "0" } }
-    const latestLiveInfoWhite = liveInfosWhite.at(-1) ?? { type: "liveInfo", info: { color: "w", depth: "0", hashfull: "0", multipv: "1", name: "", nodes: "0", ply: 0, pv: "", score: "0", seldepth: "0", speed: "0", tbhits: "0", time: "0" } }
+    const latestLiveInfoBlack = liveInfosBlack.at(-1) ?? emptyLiveInfo()
+    const latestLiveInfoWhite = liveInfosWhite.at(-1) ?? emptyLiveInfo()
 
     const engines = cccEvent?.tournamentDetails.engines ?? []
     const white = engines.find(engine => engine.name === game.current.getHeaders()["White"])

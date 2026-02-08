@@ -1,0 +1,54 @@
+import type { Chess } from "chess.js";
+import type { CCCLiveInfo } from "../types";
+
+export type LiveInfoEntry = CCCLiveInfo | undefined
+
+export function extractLiveInfoFromGame(game: Chess) {
+    const liveInfosWhite: LiveInfoEntry[] = []
+    const liveInfosBlack: LiveInfoEntry[] = []
+    game.getComments().forEach((value, i) => {
+        const data = value.comment.split(", ")
+
+        if (data[0] === "book") return
+
+        let score = data[0].split("/")[0]
+        if (i % 2 === 1) {
+            if (score.includes("+"))
+                score = score.replace("+", "-")
+            else
+                score = score.replace("-", "+")
+        }
+
+        const liveInfo: CCCLiveInfo = {
+            type: "liveInfo",
+            info: {
+                color: i % 2 === 0 ? "w" : "b",
+                depth: data[0].split("/")[1].split(" ")[0],
+                multipv: "1",
+                hashfull: data[6].split("=")[1],
+                name: "",
+                nodes: data[3].split("=")[1],
+                ply: i + 1,
+                pv: "",
+                score,
+                seldepth: data[4].split("=")[1],
+                speed: data[5].split("=")[1],
+                tbhits: data[7].split("=")[1],
+                time: data[0].split(" ")[1].split("s")[0].replace(".", ""),
+            }
+        }
+        if (i % 2 === 0)
+            liveInfosWhite[liveInfo.info.ply] = liveInfo
+        else
+            liveInfosBlack[liveInfo.info.ply] = liveInfo
+    })
+
+    return {
+        liveInfosWhite,
+        liveInfosBlack,
+    }
+}
+
+export function emptyLiveInfo(): CCCLiveInfo {
+    return { type: "liveInfo", info: { color: "b", depth: "0", hashfull: "0", multipv: "1", name: "", nodes: "0", ply: 0, pv: "", score: "0", seldepth: "0", speed: "0", tbhits: "0", time: "0" } }
+}

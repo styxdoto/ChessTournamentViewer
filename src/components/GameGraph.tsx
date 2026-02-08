@@ -2,11 +2,12 @@ import { Line } from "react-chartjs-2";
 import type { CCCEngine, CCCLiveInfo } from "../types";
 import { useState } from "react";
 import "./GameGraph.css"
+import type { LiveInfoEntry } from "./LiveInfo";
 
 type GameGraphProps = {
-    liveInfosWhite: (CCCLiveInfo | undefined)[]
-    liveInfosBlack: (CCCLiveInfo | undefined)[]
-    liveInfosStockfish: (CCCLiveInfo | undefined)[]
+    liveInfosWhite: LiveInfoEntry[]
+    liveInfosBlack: LiveInfoEntry[]
+    liveInfosStockfish: LiveInfoEntry[]
     white: CCCEngine
     black: CCCEngine
 }

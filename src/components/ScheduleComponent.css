@@ -5,6 +5,10 @@
   grid-template-rows: auto 1fr;
 }
 
+.scheduleWindow h2 {
+  margin-top: 0.75rem;
+}
+
 .schedule {
   overflow: auto;
 }
