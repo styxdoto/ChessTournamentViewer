@@ -6,6 +6,7 @@ import "./GameGraph.css"
 type GameGraphProps = {
     liveInfosWhite: (CCCLiveInfo | undefined)[]
     liveInfosBlack: (CCCLiveInfo | undefined)[]
+    liveInfosStockfish: (CCCLiveInfo | undefined)[]
     white: CCCEngine
     black: CCCEngine
 }
@@ -62,12 +63,12 @@ const MODES = [
 ]
 
 export function GameGraph({
-    liveInfosBlack, liveInfosWhite, white, black
+    liveInfosBlack, liveInfosWhite, white, black, liveInfosStockfish
 }: GameGraphProps) {
 
     const [mode, setMode] = useState(0)
 
-    const labels = Array.from({ length: Math.max(liveInfosWhite.length, liveInfosBlack.length) }, (_, i) => String(i + 1))
+    const labels = Array.from({ length: Math.max(liveInfosWhite.length, liveInfosBlack.length, liveInfosStockfish.length) }, (_, i) => String(i + 1))
 
     const data = {
         labels,
@@ -84,6 +85,13 @@ export function GameGraph({
                 data: liveInfosWhite.map(MODES[mode].map),
                 borderColor: 'rgba(255, 255, 255, 0.7)',
                 backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                spanGaps: true,
+            },
+            {
+                label: "Stockfish",
+                data: liveInfosStockfish.map(MODES[mode].map),
+                borderColor: 'rgba(21, 101, 192, 0.7)',
+                backgroundColor: 'rgba(21, 101, 192, 0.7)',
                 spanGaps: true,
             },
         ],

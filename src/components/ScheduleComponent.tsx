@@ -38,7 +38,7 @@ export function ScheduleComponent({ engines, event, requestEvent }: ScheduleComp
                     </div>
                 )
             })}
-            {[event.tournamentDetails.schedule.present].map((game, i) => {
+            {event.tournamentDetails.schedule.present && [event.tournamentDetails.schedule.present].map((game, i) => {
                 const gameWhite = engines.find(engine => engine.id === game.whiteId)!!
                 const gameBlack = engines.find(engine => engine.id === game.blackId)!!
                 return (

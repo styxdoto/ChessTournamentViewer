@@ -52,7 +52,7 @@ type CCCEventUpdate = {
         tc: TimeControl
         schedule: {
             past: CCCGame[]
-            present: CCCGame
+            present?: CCCGame
             future: CCCGame[]
         }
         engines: CCCEngine[]
