@@ -5,13 +5,13 @@ import { CCCWebSocket } from './websocket'
 import type { Api } from '@lichess-org/chessground/api'
 import type { CCCLiveInfo, CCCEngine, CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks } from './types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
-import './App.css'
-import { Line } from 'react-chartjs-2'
 import { CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from 'chart.js'
 import { EngineComponent } from './components/EngineComponent'
 import { StandingsTable } from './components/StandingsTable'
 import { GameGraph } from './components/GameGraph'
 import type { Config } from '@lichess-org/chessground/config'
+import { ScheduleComponent } from './components/ScheduleComponent'
+import './App.css'
 
 const CLOCK_UPDATE_MS = 25
 
@@ -196,6 +196,8 @@ function App() {
     const latestLiveInfoBlack = liveInfosBlack.at(-1)
     const latestLiveInfoWhite = liveInfosWhite.at(-1)
 
+    const engines = cccEvent?.tournamentDetails.engines ?? []
+
     return (
         <div className="app">
 
@@ -209,8 +211,13 @@ function App() {
 
             {white && black && <div className="standingsWindow">
                 <h2>Standings</h2>
-                <StandingsTable engines={cccEvent?.tournamentDetails.engines ?? []} />
+                <StandingsTable engines={engines} />
                 <GameGraph black={black} white={white} liveInfosBlack={liveInfosBlack} liveInfosWhite={liveInfosWhite} />
+            </div>}
+
+            {cccEvent && <div className="scheduleWindow">
+                <h2>Schedule</h2>
+                <ScheduleComponent event={cccEvent} engines={engines}/>
             </div>}
 
         </div>

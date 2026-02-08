@@ -1,6 +1,7 @@
 import type { CCCEngine, CCCLiveInfo } from "../types";
 
 import "./EngineComponent.css"
+import { EngineLogo } from "./EngineLogo";
 
 type EngineComponentProps = {
     info: CCCLiveInfo
@@ -28,7 +29,7 @@ export function EngineComponent({ engine, info, time }: EngineComponentProps) {
 
     return (
         <div className="engine">
-            <img src={"https://images.chesscomfiles.com/chess-themes/computer_chess_championship/avatars/" + engine.imageUrl + ".png"} />
+            <EngineLogo engine={engine}/>
             <span className="engineName">{engine.name}</span>
             <span className="engineEval">{info.info.score}</span>
             <span className="engineField"> D: <span>{info.info.depth} / {info.info.seldepth}</span></span>

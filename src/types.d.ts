@@ -34,8 +34,11 @@ type CCCGame = {
     matchNr: string
     opening: string
     openingType: string
+    outcome?: string
     roundNr: string
     timeControl: string
+    timeStart?: string
+    timeEnd?: string
     variant: string
     whiteId: string
     whiteName: string

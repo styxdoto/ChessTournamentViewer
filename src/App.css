@@ -1,16 +1,17 @@
 :root {
-  --standings-width: 30rem;
   --board-size: min(calc(100vh - 12rem), calc(100vw - var(--standings-width)));
+  --standings-width: 30rem;
+  --schedule-width: 30rem;
 }
 
 .app {
   margin: 1rem;
-  width: min(calc(100vw - 2rem), calc(var(--board-size) + var(--standings-width) - 1rem));
+  width: calc(100vw - 2rem);
   height: calc(100vh - 2rem);
   overflow: hidden;
 
   display: grid;
-  grid-template-columns: var(--board-size) 1fr;
+  grid-template-columns: var(--board-size) var(--standings-width) var(--schedule-width);
   gap: 1rem;
 }
 

@@ -1,0 +1,53 @@
+.scheduleWindow {
+  max-height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.schedule {
+  overflow: auto;
+}
+
+.schedule .game {
+  display: grid;
+  align-items: center;
+  gap: 1rem;
+  grid-template-columns: 3rem 50px 1fr auto 1fr 50px;
+  cursor: pointer;
+  padding-left: 1rem;
+}
+
+.schedule .game:nth-child(4n + 1),
+.schedule .game:nth-child(4n + 2) {
+  background: #2A2A2A;
+}
+
+.schedule .game:nth-child(4n + 3),
+.schedule .game:nth-child(4n + 4) {
+  background: #343434;
+}
+
+.schedule .game:hover {
+  background: #565656;
+}
+
+.schedule .game.active {
+  background: #676767;
+}
+
+.schedule .game .round {
+  text-align: center;
+}
+
+.schedule .game .engineName.winner {
+  color: #43A047;
+}
+
+.schedule .game .engineName.loser {
+  color: #E53935;
+}
+
+.schedule .game .engineName.draw {
+  color: #9E9E9E;
+}
