@@ -126,17 +126,17 @@ export class StockfishWorker {
         let score = "+0.00";
         const scoreIdx = data.indexOf("score");
         if (scoreIdx !== -1) {
-            let scoreNumber = 0
             if (data[scoreIdx + 1] === "cp") {
-                scoreNumber = Number(data[scoreIdx + 2]) / 100 * (color === "black" ? -1 : 1);
+                const scoreNumber = Number(data[scoreIdx + 2]) / 100 * (color === "black" ? -1 : 1);
+                score = (scoreNumber >= 0 ? "+" : "-") + scoreNumber
+                if (!score.includes("."))
+                    score += "."
+                while (score.split(".")[1].length < 2)
+                    score += "0"
             } else {
-                scoreNumber = Math.min(Math.max(Number(data[scoreIdx + 2]) * 10, -10, 10))
+                const scoreNumber = Number(data[scoreIdx + 2])
+                score = (scoreNumber >= 0 ? "+" : "-") + "M" + scoreNumber
             }
-            score = (scoreNumber >= 0 ? "+" : "-") + scoreNumber
-            if (!score.includes("."))
-                score += "."
-            while (score.split(".")[1].length < 2)
-                score += "0"
         }
 
         const bestmove = data[19];
