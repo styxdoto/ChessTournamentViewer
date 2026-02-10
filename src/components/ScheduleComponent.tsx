@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react"
-import type { CCCEngine, CCCEventUpdate } from "../types"
+import { useEffect, useRef, useState } from "react"
+import type { CCCEngine, CCCEventUpdate, CCCGameUpdate } from "../types"
 import { EngineLogo } from "./EngineLogo"
 import "./ScheduleComponent.css"
 
@@ -7,20 +7,27 @@ type ScheduleComponentProps = {
     engines: CCCEngine[]
     event: CCCEventUpdate
     requestEvent: (gameNr: string) => void
+    selectedGame: CCCGameUpdate
 }
 
-export function ScheduleComponent({ engines, event, requestEvent }: ScheduleComponentProps) {
+export function ScheduleComponent({ engines, event, selectedGame, requestEvent }: ScheduleComponentProps) {
 
     const scheduleRef = useRef<HTMLDivElement>(null)
     const currentGameRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
-        if (!scheduleRef.current || !currentGameRef.current) return
+    const [scrolledToCurrentGame, setScrolledToCurrentGame] = useState(false)
 
-        console.log(scheduleRef.current.offsetTop, scheduleRef.current.clientTop, scheduleRef.current.scrollTop)
-        console.log(currentGameRef.current.offsetTop, currentGameRef.current.clientTop, currentGameRef.current.scrollTop)
+    useEffect(() => {
+        if (!scheduleRef.current || !currentGameRef.current || scrolledToCurrentGame) return
+
         scheduleRef.current.scrollTop = currentGameRef.current.offsetTop - scheduleRef.current.clientHeight / 2
+        
+        setScrolledToCurrentGame(true)
     }, [scheduleRef.current, currentGameRef.current])
+
+    useEffect(() => {
+        setScrolledToCurrentGame(false)
+    }, [event.tournamentDetails.tNr])
 
     const gamesList = [
         ...event.tournamentDetails.schedule.past,
@@ -38,8 +45,10 @@ export function ScheduleComponent({ engines, event, requestEvent }: ScheduleComp
                 const blackClass = game.outcome === "1-0" ? "loser" : game.outcome === "0-1" ? "winner" : game.timeEnd ? "draw" : "tbd";
 
                 const isCurrentGame = game.gameNr === event.tournamentDetails.schedule.present?.gameNr;
-                const gameClass = isCurrentGame ? " active" : "";
-                const ref = isCurrentGame ? currentGameRef : null
+                const isSelectedGame = game.gameNr === String(selectedGame.gameDetails.gameNr);
+                const tournamentOver = !event.tournamentDetails.schedule.present && event.tournamentDetails.schedule.future.length === 0
+                const gameClass = isCurrentGame || isSelectedGame ? " active" : "";
+                const ref = isCurrentGame || (isSelectedGame && tournamentOver) ? currentGameRef : null
 
                 return (
                     <div className={"game" + gameClass} ref={ref} key={game.gameNr} onClick={() => requestEvent(game.gameNr)}>

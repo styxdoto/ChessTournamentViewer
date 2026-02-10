@@ -1,5 +1,5 @@
 .scheduleWindow {
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   max-height: 100%;
   overflow: hidden;
   display: grid;
@@ -19,11 +19,6 @@
   cursor: pointer;
   height: 50px;
   border-bottom: 1px solid #121212;
-}
-
-.schedule .game img {
-  width: 36px;
-  height: 36px;
 }
 
 .schedule .game:nth-child(4n + 1),

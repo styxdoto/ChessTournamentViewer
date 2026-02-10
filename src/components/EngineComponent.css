@@ -2,7 +2,6 @@
   display: grid;
   grid-template-columns: 50px repeat(6, 1fr);
   align-items: center;
-  gap: 1rem;
   background: #343434;
 }
 

@@ -1,5 +1,5 @@
 :root {
-  --board-size: min(calc(100vh - 8rem), calc(100vw - var(--standings-width)));
+  --board-size: min(calc(100vh - 100px - 2rem - 2px), calc(100vw - var(--standings-width)));
   --standings-width: 28rem;
   --schedule-width: 28rem;
 }
@@ -41,11 +41,16 @@ h2 {
   max-height: 100%;
   width: var(--board-size);
   border: 1px solid #121212;
+  display: grid;
+  grid-template-rows: 50px 1fr 50px;
 }
 
 .board {
   width: var(--board-size);
   height: var(--board-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .board cg-board {
@@ -86,4 +91,8 @@ h2 {
 
 .eventList td:hover {
   background: #434343 !important;
+}
+
+.eventList tr.active td {
+  background: #4D4D4D !important;
 }
