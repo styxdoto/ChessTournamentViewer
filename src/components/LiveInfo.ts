@@ -50,5 +50,5 @@ export function extractLiveInfoFromGame(game: Chess) {
 }
 
 export function emptyLiveInfo(): CCCLiveInfo {
-    return { type: "liveInfo", info: { color: "b", depth: "0", hashfull: "0", multipv: "1", name: "", nodes: "0", ply: 0, pv: "", score: "0", seldepth: "0", speed: "0", tbhits: "0", time: "0" } }
+    return { type: "liveInfo", info: { color: "b", depth: "0", hashfull: "0", multipv: "1", name: "", nodes: "0", ply: 0, pv: "", score: "+0.00", seldepth: "0", speed: "0", tbhits: "0", time: "0" } }
 }

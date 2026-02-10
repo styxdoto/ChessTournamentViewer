@@ -6,16 +6,17 @@ import type { Api } from '@lichess-org/chessground/api'
 import type { CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks, CCCGameUpdate } from './types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
 import { CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from 'chart.js'
-import { EngineComponent } from './components/EngineComponent'
+import { EngineCard } from './components/EngineCard'
 import { StandingsTable } from './components/StandingsTable'
 import { GameGraph } from './components/GameGraph'
 import type { Config } from '@lichess-org/chessground/config'
-import { ScheduleComponent } from './components/ScheduleComponent'
-import { StockfishWorker } from './components/StockfishWorker'
+import { Schedule } from './components/Schedule'
+import { StockfishEngineDefinition, StockfishWorker } from './components/StockfishWorker'
 import './App.css'
 import { emptyLiveInfo, extractLiveInfoFromGame, type LiveInfoEntry } from './components/LiveInfo'
 import { Crosstable } from './components/Crosstable'
 import { EventList } from './components/EventList'
+import { MoveList } from './components/MoveList'
 
 const CLOCK_UPDATE_MS = 25
 
@@ -250,6 +251,7 @@ function App() {
 
     const latestLiveInfoBlack = liveInfosBlack.at(-1) ?? emptyLiveInfo()
     const latestLiveInfoWhite = liveInfosWhite.at(-1) ?? emptyLiveInfo()
+    const latestLiveInfoStockfish = liveInfosStockfish.at(-1) ?? emptyLiveInfo()
 
     const engines = (cccEvent?.tournamentDetails.engines ?? []).sort((a, b) => Number(b.points) - Number(a.points)) ?? []
     const white = engines.find(engine => engine.name === game.current.getHeaders()["White"])
@@ -259,32 +261,49 @@ function App() {
         <div className="app">
 
             {popupOpen && <div className="popup">
-                <button onClick={() => setPopupOpen(false)}>Close</button>
-                {cccEvent && <Crosstable engines={engines} cccEvent={cccEvent} />}
+                {cccEvent && <Crosstable engines={engines} cccEvent={cccEvent} onClose={() => setPopupOpen(false)}/>}
             </div>}
 
-            <div className="boardWindow">
-                {black && clocks && <EngineComponent info={latestLiveInfoBlack} engine={black} time={Number(clocks.btime)} />}
-
-                <div ref={boardElementRef} className="board"></div>
-
-                {white && clocks && <EngineComponent info={latestLiveInfoWhite} engine={white} time={Number(clocks.wtime)} />}
+            <div className="topBar">
+                <div className="currentEvent">{cccEvent?.tournamentDetails.name}</div>
+                {cccEventList && cccEvent && <EventList eventList={cccEventList} requestEvent={requestEvent} selectedEvent={cccEvent} />}
             </div>
 
-            {white && black && <div className="standingsWindow">
-                <h2>Standings</h2>
-                <button className="showCrosstable" onClick={() => setPopupOpen(true)}>Show Crosstable</button>
-                <StandingsTable engines={engines} />
-                <GameGraph black={black} white={white} liveInfosBlack={liveInfosBlack} liveInfosWhite={liveInfosWhite} liveInfosStockfish={liveInfosStockfish} />
-            </div>}
+            <div className="engineWindow">
+                {black && white && clocks && <>
+                    <EngineCard info={latestLiveInfoBlack} engine={black} time={Number(clocks.btime)} />
+                    <EngineCard info={latestLiveInfoStockfish} engine={StockfishEngineDefinition} time={0} />
+                    <EngineCard info={latestLiveInfoWhite} engine={white} time={Number(clocks.wtime)} />
+                </>}
+            </div>
 
-            {cccEvent && cccGame && cccEventList && <div className="scheduleWindow">
-                <h2>Schedule</h2>
-                <ScheduleComponent event={cccEvent} engines={engines} requestEvent={requestEvent} selectedGame={cccGame} />
+            <div ref={boardElementRef} className="boardWindow"></div>
 
-                <h2>Event History</h2>
-                <EventList eventList={cccEventList} requestEvent={requestEvent} selectedEvent={cccEvent}/>
-            </div>}
+            <div className="movesWindow">
+                <h4>Move List</h4>
+                <MoveList game={game.current}/>
+            </div>
+
+            <div className="standingsWindow">
+                {white && black && <>
+                    <h4>Standings</h4>
+                    <button onClick={() => setPopupOpen(true)}>Show Crosstable</button>
+                    <StandingsTable engines={engines} />
+                </>}
+            </div>
+
+            <div className="graphWindow">
+                {black && white && <>
+                    <GameGraph black={black} white={white} liveInfosBlack={liveInfosBlack} liveInfosWhite={liveInfosWhite} liveInfosStockfish={liveInfosStockfish} />
+                </>}
+            </div>
+
+            <div className="scheduleWindow">
+                {cccEvent && cccGame && cccEventList && <>
+                    <h4>Schedule</h4>
+                    <Schedule event={cccEvent} engines={engines} requestEvent={requestEvent} selectedGame={cccGame} />
+                </>}
+            </div>
 
         </div>
     )

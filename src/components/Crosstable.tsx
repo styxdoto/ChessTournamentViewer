@@ -4,9 +4,10 @@ import "./Crosstable.css"
 type CrosstableProps = {
     engines: CCCEngine[]
     cccEvent: CCCEventUpdate
+    onClose: () => void
 }
 
-export function Crosstable({ engines, cccEvent }: CrosstableProps) {
+export function Crosstable({ engines, cccEvent, onClose }: CrosstableProps) {
     const allGames = [
         ...cccEvent.tournamentDetails.schedule.past,
         ...(cccEvent.tournamentDetails.schedule.present ? [cccEvent.tournamentDetails.schedule.present] : []),
@@ -17,7 +18,9 @@ export function Crosstable({ engines, cccEvent }: CrosstableProps) {
         <table className="crosstable">
             <tbody>
                 <tr>
-                    <td></td>
+                    <td>
+                        <button onClick={onClose}>Close</button>
+                    </td>
                     {engines.map((engine, i) => (
                         <td key={engine.id}>#{i + 1}. {engine.name}</td>
                     ))}

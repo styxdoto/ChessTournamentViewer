@@ -1,11 +1,8 @@
 :root {
-  --board-size: min(calc(100vh - 100px - 2rem - 2px), calc(100vw - var(--standings-width)));
   --standings-width: 28rem;
   --schedule-width: 28rem;
-}
-
-h2 {
-  margin: 0;
+  --engines-width: 350px;
+  --board-size: calc(100vw - var(--standings-width) - var(--schedule-width) - var(--engines-width));
 }
 
 .app {
@@ -16,8 +13,31 @@ h2 {
   position: relative;
 
   display: grid;
-  grid-template-columns: var(--board-size) var(--standings-width) var(--schedule-width);
+  grid-template-columns: var(--engines-width) var(--board-size) 1fr;
+  grid-template-rows: 50px var(--board-size) minmax(0, 1fr);
   gap: 1rem;
+}
+
+.topBar,
+.scheduleWindow,
+.standingsWindow,
+.graphWindow,
+.boardWindow,
+.movesWindow {
+  border-radius: 8px;
+  background: #343434;
+  border: 1px solid #1A1A1A;
+  padding: 1rem;
+}
+
+.topBar {
+  grid-row: 1 / 2;
+  grid-column: 1 / 4;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 1rem;
+  font-weight: bold;
 }
 
 .popup {
@@ -30,69 +50,69 @@ h2 {
   transform: translate(-50%, -50%);
   z-index: 100;
   overflow: auto;
+  border-radius: 8px;
 }
 
-.popup button {
-  position: absolute;
-  right: 0;
+.engineWindow {
+  height: var(--board-size);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.movesWindow {
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .boardWindow {
-  max-height: 100%;
-  width: var(--board-size);
-  border: 1px solid #121212;
-  display: grid;
-  grid-template-rows: 50px 1fr 50px;
-}
-
-.board {
   width: var(--board-size);
   height: var(--board-size);
+  border: 1px solid #1A1A1A;
+  padding: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.board cg-board {
+.boardWindow cg-container {
+  width: var(--board-size) !important;
+  height: var(--board-size) !important;
+}
+
+.boardWindow cg-board {
   background-color: #8ca2ad;
 }
 
+.scheduleWindow {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 2fr;
+  gap: 1rem;
+  grid-column: 2 / 3;
+}
+
+.graphWindow {
+  grid-column: 3 / 4;
+  grid-row: 3 / 4;
+}
+
 .standingsWindow {
-  max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  grid-row: 2 / 3;
+  grid-column: 3 / 4;
+  gap: 1rem;
+  position: relative;
 }
 
-.standingsWindow .showCrosstable {
-  width: 100%;
-}
-
-.eventListContainer {
-  overflow: auto;
-}
-
-.eventList {
-  background: #2A2A2A;
-  border: 1px solid #121212;
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.eventList td {
-  border-bottom: 1px solid #121212;
-  padding: 0.5rem;
-  cursor: pointer;
-}
-
-.eventList tr:nth-child(2n) td {
-  background: #323232;
-}
-
-.eventList td:hover {
-  background: #434343 !important;
-}
-
-.eventList tr.active td {
-  background: #4D4D4D !important;
+.standingsWindow button {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
 }

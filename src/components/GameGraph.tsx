@@ -105,38 +105,43 @@ export function GameGraph({
                     <button key={m.name} onClick={() => setMode(i)} className={"modeSelector" + (mode === i ? " active" : "")}>{m.name}</button>
                 ))}
             </div>
-            <Line
-                options={{
-                    animation: false,
-                    transitions: {
-                        active: {
-                            animation: { duration: 0 }
+            <div className="graphWrapper">
+                <Line
+                    options={{
+                        animation: false,
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        transitions: {
+                            active: {
+                                animation: { duration: 0 }
+                            },
                         },
-                    },
-                    hover: { mode: undefined },
-                    elements: {
-                        line: { tension: 0 },
-                        // point: { radius: 0 },
-                    },
-                    plugins: {
-                        legend: { display: false, onClick: undefined },
-                        tooltip: { enabled: false },
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: (context) => {
-                                    const val = context.tick.value;
-                                    if (mode === 0 && (val === 1 || val === -1 || val === 0)) return 'rgba(0, 0, 0, 0.5)';
-                                    return 'rgba(0, 0, 0, 0.05)';
+                        hover: { mode: undefined },
+                        elements: {
+                            line: { tension: 0 },
+                            // point: { radius: 0 },
+                        },
+                        plugins: {
+                            legend: { display: false, onClick: undefined },
+                            tooltip: { enabled: false },
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: (context) => {
+                                        const val = context.tick.value;
+                                        if (mode === 0 && (val === 1 || val === -1)) return 'rgba(0, 0, 0, 0.25)';
+                                        if (mode === 0 && val === 0) return 'rgba(0, 0, 0, 0.5)';
+                                        return 'rgba(0, 0, 0, 0.05)';
+                                    }
                                 }
-                            }
+                            },
                         },
-                    },
-                }}
-                data={data}
-            />
+                    }}
+                    data={data}
+                />
+            </div>
         </div>
     )
 }

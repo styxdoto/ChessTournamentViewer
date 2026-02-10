@@ -1,15 +1,6 @@
-.scheduleWindow {
-  margin-top: 0.75rem;
-  max-height: 100%;
-  overflow: hidden;
-  display: grid;
-  grid-template-rows: auto 2fr auto 1fr;
-  gap: 1rem;
-}
-
 .schedule {
   overflow: auto;
-  border: 1px solid #121212;
+  border: 1px solid #232323;
 }
 
 .schedule .game {
@@ -18,7 +9,7 @@
   grid-template-columns: 50px 50px 1fr 3rem 1fr 50px;
   cursor: pointer;
   height: 50px;
-  border-bottom: 1px solid #121212;
+  border-bottom: 1px solid #232323;
 }
 
 .schedule .game:nth-child(4n + 1),

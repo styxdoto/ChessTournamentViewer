@@ -1,19 +1,19 @@
-.showCrosstable {
-  border: 1px solid #121212;
-}
-
 .crosstable {
   border-collapse: collapse;
   width: calc(100% - 2rem);
   height: calc(100% - 2rem);
 }
 
+.crosstable td:has(button) {
+  text-align: center;
+}
+
 .crosstable tr:first-child {
-  border-bottom: 1px solid #121212;
+  border-bottom: 1px solid #232323;
 }
 
 .crosstable tr td:first-child {
-  border-right: 1px solid #121212;
+  border-right: 1px solid #232323;
   text-wrap: nowrap;
 }
 

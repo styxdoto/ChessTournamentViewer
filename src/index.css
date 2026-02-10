@@ -2,7 +2,7 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
+    font-family: 'Sora', system-ui, sans-serif;
     box-sizing: border-box;
 
     background: #212121;
@@ -12,12 +12,21 @@ body {
     color: #FAFAFA;
 }
 
+h4 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #A1A1A1;
+}
+
 button {
     outline: none;
-    border: none;
-    background: #343434;
+    border: 1px solid #232323;
+    background: #323232;
     padding: 0.5rem 0.625rem;
     cursor: pointer;
+    border-radius: 4px;
 }
 
 button:hover {

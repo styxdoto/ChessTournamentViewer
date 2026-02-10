@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react"
 import type { CCCEngine, CCCEventUpdate, CCCGameUpdate } from "../types"
 import { EngineLogo } from "./EngineLogo"
-import "./ScheduleComponent.css"
+import "./Schedule.css"
 
-type ScheduleComponentProps = {
+type ScheduleProps = {
     engines: CCCEngine[]
     event: CCCEventUpdate
     requestEvent: (gameNr: string) => void
     selectedGame: CCCGameUpdate
 }
 
-export function ScheduleComponent({ engines, event, selectedGame, requestEvent }: ScheduleComponentProps) {
+export function Schedule({ engines, event, selectedGame, requestEvent }: ScheduleProps) {
 
     const scheduleRef = useRef<HTMLDivElement>(null)
     const currentGameRef = useRef<HTMLDivElement>(null)
@@ -20,9 +20,9 @@ export function ScheduleComponent({ engines, event, selectedGame, requestEvent }
     useEffect(() => {
         if (!scheduleRef.current || !currentGameRef.current || scrolledToCurrentGame) return
 
-        scheduleRef.current.scrollTop = currentGameRef.current.offsetTop - scheduleRef.current.clientHeight / 2
-        
+        currentGameRef.current.scrollIntoView({ block: "center" })
         setScrolledToCurrentGame(true)
+        
     }, [scheduleRef.current, currentGameRef.current])
 
     useEffect(() => {

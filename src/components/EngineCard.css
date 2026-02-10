@@ -1,0 +1,57 @@
+.engineComponent {
+  border-radius: 8px;
+  background: #343434;
+  border: 1px solid #1A1A1A;
+}
+
+.engineComponent hr {
+  background: #434343;
+  border: none;
+  height: 1px;
+  margin: 0;
+}
+
+.engineName {
+  font-weight: bold;
+}
+
+.engineInfoHeader {
+  display: flex;
+  align-items: center;
+}
+
+.engineEval {
+  margin: 0 1rem 0 auto;
+  font-weight: bold;
+}
+
+.engineInfoTable {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 1rem;
+  row-gap: 0.25rem;
+  column-gap: 2rem;
+  font-size: 0.9rem;
+}
+
+.engineField {
+  display: flex;
+  justify-content: space-between;
+  color: #A1A1A1;
+}
+
+.engineField span,
+.enginePv,
+.engineEval {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.enginePv {
+  color: #A1A1A1;
+  font-size: 0.9rem;
+  padding: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}

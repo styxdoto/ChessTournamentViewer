@@ -1,5 +1,5 @@
 import type { DrawShape } from "@lichess-org/chessground/draw"
-import type { CCCLiveInfo } from "../types"
+import type { CCCEngine, CCCLiveInfo } from "../types"
 import type { Square } from "chess.js"
 
 export type AnalysisResult = {
@@ -7,6 +7,27 @@ export type AnalysisResult = {
     liveInfo: CCCLiveInfo;
     arrow: DrawShape | null;
 }
+
+const StockfishEngineDefinition: CCCEngine = {
+    authors: "",
+    config: { command: "", options: {}, timemargin: 0 },
+    country: "",
+    elo: "",
+    facts: "",
+    flag: "",
+    id: "",
+    imageUrl: "stockfish",
+    name: "Stockfish 17.1",
+    perf: "",
+    points: "",
+    rating: "",
+    updatedAt: "",
+    version: "",
+    website: "",
+    year: "",
+}
+
+export { StockfishEngineDefinition }
 
 export class StockfishWorker {
     private worker: Worker;
@@ -102,14 +123,20 @@ export class StockfishWorker {
         const time = Number(data[17]);
         if (isNaN(time)) return null;
 
-        let scoreVal = 0;
+        let score = "+0.00";
         const scoreIdx = data.indexOf("score");
         if (scoreIdx !== -1) {
+            let scoreNumber = 0
             if (data[scoreIdx + 1] === "cp") {
-                scoreVal = Number(data[scoreIdx + 2]) / 100 * (color === "black" ? -1 : 1);
+                scoreNumber = Number(data[scoreIdx + 2]) / 100 * (color === "black" ? -1 : 1);
             } else {
-                scoreVal = Math.min(Math.max(Number(data[scoreIdx + 2]) * 10, -10, 10))
+                scoreNumber = Math.min(Math.max(Number(data[scoreIdx + 2]) * 10, -10, 10))
             }
+            score = (scoreNumber >= 0 ? "+" : "-") + scoreNumber
+            if (!score.includes("."))
+                score += "."
+            while (score.split(".")[1].length < 2)
+                score += "0"
         }
 
         const bestmove = data[19];
@@ -122,13 +149,13 @@ export class StockfishWorker {
             info: {
                 ply,
                 color,
+                score,
                 depth: data[data.indexOf("depth") + 1],
-                score: String(scoreVal),
                 name: "",
                 hashfull: data[data.indexOf("hashfull") + 1],
                 multipv: data[data.indexOf("multipv") + 1],
                 nodes: data[data.indexOf("nodes") + 1],
-                pv: "",
+                pv: data.slice(data.indexOf("pv") + 1).join(" "),
                 seldepth: data[data.indexOf("seldepth") + 1],
                 speed: data[data.indexOf("nps") + 1],
                 tbhits: "0",

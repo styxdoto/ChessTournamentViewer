@@ -1,36 +1,56 @@
-.standingsWindow {
-  margin-top: 0.75rem;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 1rem;
+.standingsWrapper {
+  height: 100%;
+  overflow: auto;
 }
 
 .standings {
   background: #2A2A2A;
-  border: 1px solid #121212;
+  border: 1px solid #232323;
   width: 100%;
   border-collapse: collapse;
 }
 
 .standingsEntry {
-  border-bottom: 1px solid #121212;
+  border-bottom: 1px solid #232323;
 }
 
 .standingsEntry td {
-  padding: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.standingsEntry td:has(.engineLogo) {
+  width: 50px;
+  padding: 0;
+}
+
+.standingsEntry .engineLogo {
+  margin-bottom: 0;
 }
 
 .standings tr:nth-child(2n) td {
   background: #323232;
 }
 
-td.standingsScore {
-  text-align: right;
-  padding-right: 1rem;
+td.placement {
+  width: 2rem;
+  text-align: center;
+  color: #A1A1A1;
 }
 
-td.standingsScore,
+td.score,
 td.perf,
 td.rating {
   color: #A1A1A1;
+}
+
+td.score {
+  width: 110px;
+}
+
+td.perf {
+  width: 70px;
+}
+
+td.rating {
+  width: 70px;
 }
