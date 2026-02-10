@@ -33,10 +33,12 @@
 .schedule .game .round {
   text-align: center;
   font-size: 0.9rem;
+  color: #A1A1A1;
 }
 
 .schedule .game .vs {
   font-size: 0.9rem;
+  color: #A1A1A1;
 }
 
 .schedule .game .engineName.winner {

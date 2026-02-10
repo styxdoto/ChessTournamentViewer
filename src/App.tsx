@@ -1,7 +1,7 @@
 import { Chessground } from '@lichess-org/chessground'
 import { Chess, Move, type Square } from 'chess.js'
 import { useEffect, useRef, useState } from 'react'
-import { CCCWebSocket } from './websocket'
+import { CCCWebSocket, type TournamentWebSocket } from './CCCWebsocket'
 import type { Api } from '@lichess-org/chessground/api'
 import type { CCCMessage, CCCEventUpdate, CCCEventsListUpdate, CCCClocks, CCCGameUpdate } from './types'
 import type { DrawShape } from '@lichess-org/chessground/draw'
@@ -30,7 +30,7 @@ function App() {
     const blackArrow = useRef<[DrawShape, DrawShape]>(null)
     const stockfishArrow = useRef<DrawShape>(null)
     const game = useRef(new Chess())
-    const ws = useRef(new CCCWebSocket("wss://ccc-api.gcp-prod.chess.com/ws"))
+    const ws = useRef<TournamentWebSocket>(new CCCWebSocket())
 
     const stockfish = useRef<StockfishWorker>(null)
     const [fen, setFen] = useState(game.current.fen())
@@ -136,7 +136,15 @@ function App() {
                 const { liveInfosBlack, liveInfosWhite } = extractLiveInfoFromGame(game.current)
                 setLiveInfosWhite(liveInfosWhite)
                 setLiveInfosBlack(liveInfosBlack)
-                setLiveInfosStockfish([])
+
+                const liveInfosStockfish: LiveInfoEntry[] = []
+                const localStorageID = msg.gameDetails.gameNr + "|"
+                for (let i = 0; i < Math.max(liveInfosBlack.length, liveInfosWhite.length, 500); i++) {
+                    const data = localStorage.getItem(localStorageID + i)
+                    if (data)
+                        liveInfosStockfish[i] = JSON.parse(data)
+                }
+                setLiveInfosStockfish(liveInfosStockfish)
 
                 break;
 
@@ -216,7 +224,7 @@ function App() {
         })
 
         ws.current.connect(handleMessage)
-        return () => ws.current.disconnect()
+        // return () => ws.current.disconnect()
     }, [boardElementRef.current])
 
     useEffect(() => {
@@ -239,6 +247,9 @@ function App() {
 
             stockfishArrow.current = result.arrow
             updateBoard(["a1", "a1"], true)
+
+            if (cccEvent && cccGame)
+                localStorage.setItem(cccGame.gameDetails.gameNr + "|" + result.liveInfo.info.ply, JSON.stringify(result.liveInfo))
 
             setLiveInfosStockfish(data => {
                 const newData = [...data]

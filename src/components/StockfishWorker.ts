@@ -128,14 +128,14 @@ export class StockfishWorker {
         if (scoreIdx !== -1) {
             if (data[scoreIdx + 1] === "cp") {
                 const scoreNumber = Number(data[scoreIdx + 2]) / 100 * (color === "black" ? -1 : 1);
-                score = (scoreNumber >= 0 ? "+" : "-") + scoreNumber
+                score = (scoreNumber >= 0 ? "+" : "") + scoreNumber
                 if (!score.includes("."))
                     score += "."
                 while (score.split(".")[1].length < 2)
                     score += "0"
             } else {
-                const scoreNumber = Number(data[scoreIdx + 2])
-                score = (scoreNumber >= 0 ? "+" : "-") + "M" + scoreNumber
+                const scoreNumber = Number(data[scoreIdx + 2]) * (color === "black" ? -1 : 1)
+                score = (scoreNumber >= 0 ? "+" : "-") + "M" + Math.abs(scoreNumber)
             }
         }
 
@@ -158,7 +158,7 @@ export class StockfishWorker {
                 pv: data.slice(data.indexOf("pv") + 1).join(" "),
                 seldepth: data[data.indexOf("seldepth") + 1],
                 speed: data[data.indexOf("nps") + 1],
-                tbhits: "0",
+                tbhits: "-",
                 time: data[data.indexOf("time") + 1],
             }
         };

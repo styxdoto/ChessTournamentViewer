@@ -69,28 +69,30 @@ export function GameGraph({
 
     const [mode, setMode] = useState(0)
 
-    const labels = Array.from({ length: Math.max(liveInfosWhite.length, liveInfosBlack.length, liveInfosStockfish.length) }, (_, i) => String(i + 1))
+    const bookPlies = liveInfosWhite.findIndex(liveInfo => !!liveInfo)
+
+    const labels = Array.from({ length: Math.max(liveInfosWhite.length, liveInfosBlack.length, liveInfosStockfish.length) - bookPlies }, (_, i) => String(i + 1 + bookPlies))
 
     const data = {
         labels,
         datasets: [
             {
                 label: black.name,
-                data: liveInfosBlack.map(MODES[mode].map),
+                data: liveInfosBlack.slice(bookPlies).map(MODES[mode].map),
                 borderColor: 'rgba(0, 0, 0, 0.7)',
                 backgroundColor: 'rgba(0, 0, 0, 0.7)',
                 spanGaps: true,
             },
             {
                 label: white.name,
-                data: liveInfosWhite.map(MODES[mode].map),
+                data: liveInfosWhite.slice(bookPlies).map(MODES[mode].map),
                 borderColor: 'rgba(255, 255, 255, 0.7)',
                 backgroundColor: 'rgba(255, 255, 255, 0.7)',
                 spanGaps: true,
             },
             {
                 label: "Stockfish",
-                data: liveInfosStockfish.map(MODES[mode].map),
+                data: liveInfosStockfish.slice(bookPlies).map(MODES[mode].map),
                 borderColor: 'rgba(21, 101, 192, 0.7)',
                 backgroundColor: 'rgba(21, 101, 192, 0.7)',
                 spanGaps: true,

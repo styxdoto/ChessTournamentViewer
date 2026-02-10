@@ -1,13 +1,15 @@
 import type { CCCMessage } from "./types"
 
-export class CCCWebSocket {
+export interface TournamentWebSocket {
+    connect: (onMessage: (message: CCCMessage) => void) => void;
+    disconnect: () => void;
+    send: (msg: unknown) => void;
+}
 
-    private url: string
+export class CCCWebSocket implements TournamentWebSocket {
+
+    private url: string = "wss://ccc-api.gcp-prod.chess.com/ws"
     private ws: WebSocket | null = null
-
-    constructor(url: string) {
-        this.url = url
-    }
 
     connect(onMessage: (message: CCCMessage) => void) {
 
@@ -19,13 +21,12 @@ export class CCCWebSocket {
         }
 
         this.ws.onmessage = e => {
-            const messages = JSON.parse(e.data)
+            const messages = JSON.parse(e.data) as CCCMessage[]
             for (const msg of messages)
                 onMessage(msg)
         }
 
         this.ws.onclose = () => {
-            console.log('ws closed')
             this.ws = null
             setTimeout(() => this.connect(onMessage), 1000)
         }
@@ -40,7 +41,6 @@ export class CCCWebSocket {
     }
 
     send(msg: unknown) {
-        console.log(msg)
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return
         this.ws.send(typeof msg === 'string' ? msg : JSON.stringify(msg))
     }
