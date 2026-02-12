@@ -1,6 +1,7 @@
 import type { DrawShape } from "@lichess-org/chessground/draw";
 import type { CCCEngine, CCCLiveInfo } from "../types";
 import type { Square } from "chess.js";
+import { v4 as uuidv4 } from "uuid";
 
 export interface IEngineWorker {
   isReady(): boolean;
@@ -52,7 +53,7 @@ export class EngineWorker {
   private id: string;
 
   constructor(worker: IEngineWorker) {
-    this.id = crypto.randomUUID();
+    this.id = uuidv4();
 
     this.worker = worker;
     this.worker.onMessage((e) => this.handleWorkerMessage(e));
