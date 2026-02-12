@@ -58,7 +58,7 @@ function App() {
   const game = useRef(new Chess());
   const ws = useRef<TournamentWebSocket>(new CCCWebSocket());
 
-  const kibitzer = useRef<EngineWorker>(null);
+  const kibitzer = useRef<EngineWorker[]>(null);
   const [fen, setFen] = useState(game.current.fen());
 
   const [popupOpen, setPopupOpen] = useState(false);
@@ -289,41 +289,54 @@ function App() {
   useEffect(() => {
     const clockTimer = setInterval(updateClocks, CLOCK_UPDATE_MS);
 
-    kibitzer.current = new EngineWorker(new StockfishWorker());
+    kibitzer.current = [
+      new EngineWorker(new NativeWorker()),
+      new EngineWorker(new StockfishWorker()),
+    ];
 
     return () => {
       clearInterval(clockTimer);
-      kibitzer.current?.terminate();
+      kibitzer.current?.forEach((worker) => worker.terminate());
     };
   }, []);
 
+  const activeKibitzer = kibitzer.current?.find((kibitzer) =>
+    kibitzer.isReady()
+  );
   useEffect(() => {
-    if (!kibitzer.current) return;
+    if (!kibitzer.current || !activeKibitzer) return;
 
-    kibitzer.current.onMessage = (result) => {
-      if (game.current.getHeaders()["Event"] === "?") return;
-      if (game.current.fen() != result.fen) return;
+    Promise.all(kibitzer.current.map((kibitzer) => kibitzer.stop())).then(
+      () => {
+        activeKibitzer.onMessage = (result) => {
+          if (game.current.getHeaders()["Event"] === "?") return;
+          if (game.current.fen() != result.fen) return;
 
-      updateBoard();
+          updateBoard();
 
-      if (cccEvent && cccGame)
-        localStorage.setItem(
-          cccGame.gameDetails.gameNr + "|" + result.liveInfo.info.ply,
-          JSON.stringify(result.liveInfo)
-        );
+          if (cccEvent && cccGame)
+            localStorage.setItem(
+              cccGame.gameDetails.gameNr + "|" + result.liveInfo.info.ply,
+              JSON.stringify(result.liveInfo)
+            );
 
-      const newLiveInfos = [...liveInfosRef.current.kibitzer];
-      newLiveInfos[result.liveInfo.info.ply] = result.liveInfo;
-      liveInfosRef.current.kibitzer = newLiveInfos;
-    };
-    kibitzer.current.analyze(fen);
-  }, [fen]);
+          const newLiveInfos = [...liveInfosRef.current.kibitzer];
+          newLiveInfos[result.liveInfo.info.ply] = result.liveInfo;
+          liveInfosRef.current.kibitzer = newLiveInfos;
+        };
+      }
+    );
+  }, [activeKibitzer?.getID()]);
+
+  useEffect(() => {
+    activeKibitzer?.analyze(fen);
+  }, [fen, activeKibitzer?.getID()]);
 
   const latestLiveInfoBlack =
     liveInfosRef.current.black.at(-1) ?? emptyLiveInfo();
   const latestLiveInfoWhite =
     liveInfosRef.current.white.at(-1) ?? emptyLiveInfo();
-  
+
   // Allow the kibitzer to be at most 1 ply behind
   const currentPly = Math.max(
     latestLiveInfoBlack.info.ply,
@@ -384,7 +397,7 @@ function App() {
         />
 
         <EngineCard
-          engine={kibitzer.current?.getEngineInfo()}
+          engine={activeKibitzer?.getEngineInfo()}
           info={latestLiveInfoKibitzer}
           time={Number(latestLiveInfoKibitzer.info.time)}
           placeholder={"Kibitzer"}

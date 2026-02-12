@@ -49,8 +49,11 @@ export class EngineWorker {
   private stopSignal: (() => void) | null = null;
 
   private engine: CCCEngine = EmptyEngineDefinition;
+  private id: string;
 
   constructor(worker: IEngineWorker) {
+    this.id = crypto.randomUUID();
+
     this.worker = worker;
     this.worker.onMessage((e) => this.handleWorkerMessage(e));
     this.worker.onError(() => {
@@ -60,6 +63,21 @@ export class EngineWorker {
 
   public getEngineInfo() {
     return this.engine;
+  }
+
+  public isReady() {
+    return this.worker.isReady();
+  }
+
+  public getID() {
+    return this.id;
+  }
+
+  public async stop() {
+    if (!this.isSearching) return;
+
+    this.post("stop");
+    await this.waitForStop();
   }
 
   public analyze(fen: string) {
@@ -128,7 +146,15 @@ export class EngineWorker {
 
   private waitForStop(): Promise<void> {
     return new Promise((resolve) => {
-      this.stopSignal = resolve;
+      const timeout = setTimeout(() => {
+        this.stopSignal = null;
+        resolve();
+      }, 500);
+
+      this.stopSignal = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
     });
   }
 
