@@ -7,6 +7,219 @@ type CrosstableProps = {
   onClose: () => void;
 };
 
+type GameResult = "win" | "loss" | "draw" | "tbd";
+type GameScore = -1 | 0 | 1;
+type Penta = [number, number, number, number, number];
+type WDL = [number, number, number];
+type EloClassName = "win" | "loss" | "draw" | "tbd";
+
+const TWO_SIGMA_CONFIDENCE = 0.954499736103642;
+const PROBABILITY_EPSILON = 1e-6;
+const ELO_FORMATTER = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+function getResultForGame(game: CCCGame, engineId: string): GameResult {
+  const whiteWin = game.whiteId === engineId ? "win" : "loss";
+  const blackWin = game.blackId === engineId ? "win" : "loss";
+
+  if (!game.outcome) {
+    return "tbd";
+  }
+
+  if (game.outcome === "1-0") {
+    return whiteWin;
+  }
+
+  if (game.outcome === "0-1") {
+    return blackWin;
+  }
+
+  return "draw";
+}
+
+function scoreFromResult(result: Exclude<GameResult, "tbd">): GameScore {
+  if (result === "win") {
+    return 1;
+  }
+
+  if (result === "loss") {
+    return -1;
+  }
+
+  return 0;
+}
+
+function pairClassFromResults(
+  result1: GameResult,
+  result2: GameResult
+): "" | "win" | "loss" {
+  if (result1 === "tbd" || result2 === "tbd") {
+    return "";
+  }
+
+  const pairScore = scoreFromResult(result1) + scoreFromResult(result2);
+
+  if (pairScore > 0) {
+    return "win";
+  }
+
+  if (pairScore < 0) {
+    return "loss";
+  }
+
+  return "";
+}
+
+function textFromResult(result: GameResult): string {
+  if (result === "tbd") {
+    return "-";
+  }
+
+  if (result === "win") {
+    return "1";
+  }
+
+  if (result === "loss") {
+    return "0";
+  }
+
+  return "½";
+}
+
+function clampProbability(probability: number): number {
+  return Math.min(
+    1 - PROBABILITY_EPSILON,
+    Math.max(PROBABILITY_EPSILON, probability)
+  );
+}
+
+function scoreToElo(score: number): number {
+  return (-400 * Math.log(1 / score - 1)) / Math.LN10;
+}
+
+function inverseErrorFunction(value: number): number {
+  const coefficient =
+    (8 * (Math.PI - 3)) / (3 * Math.PI * (4 - Math.PI));
+  const y = Math.log(1 - value * value);
+  const z = 2 / (Math.PI * coefficient) + y / 2;
+  const sign = value < 0 ? -1 : 1;
+
+  return sign * Math.sqrt(Math.sqrt(z * z - y / coefficient) - z);
+}
+
+function phiInverse(probability: number): number {
+  return Math.sqrt(2) * inverseErrorFunction(2 * probability - 1);
+}
+
+function calculateEloAndMargin(wdl: WDL): {
+  text: string;
+  className: EloClassName;
+} {
+  const [wins, draws, losses] = wdl;
+  const totalGames = wins + draws + losses;
+
+  if (totalGames < 2) {
+    return { text: "--", className: "tbd" };
+  }
+
+  const score = (wins + draws * 0.5) / totalGames;
+  const elo = scoreToElo(clampProbability(score));
+
+  const winProbability = wins / totalGames;
+  const drawProbability = draws / totalGames;
+  const lossProbability = losses / totalGames;
+
+  const winDeviation = winProbability * (1 - score) ** 2;
+  const drawDeviation = drawProbability * (0.5 - score) ** 2;
+  const lossDeviation = lossProbability * score ** 2;
+
+  const stdDeviation =
+    Math.sqrt(winDeviation + drawDeviation + lossDeviation) /
+    Math.sqrt(totalGames);
+
+  const minConfidenceProbability = (1 - TWO_SIGMA_CONFIDENCE) / 2;
+  const maxConfidenceProbability = 1 - minConfidenceProbability;
+
+  const minScore = clampProbability(
+    score + phiInverse(minConfidenceProbability) * stdDeviation
+  );
+  const maxScore = clampProbability(
+    score + phiInverse(maxConfidenceProbability) * stdDeviation
+  );
+
+  const errorMargin = (scoreToElo(maxScore) - scoreToElo(minScore)) / 2;
+
+  const eloWithSign = `${elo >= 0 ? "+" : ""}${ELO_FORMATTER.format(elo)}`;
+
+  return {
+    text: `${eloWithSign} +/- ${ELO_FORMATTER.format(errorMargin)}`,
+    className: elo > 0 ? "win" : elo < 0 ? "loss" : "draw",
+  };
+}
+
+function calculatePentaAndWDL(
+  gamePairs: [CCCGame, CCCGame][],
+  engineId: string
+): {
+  penta: Penta;
+  wdl: WDL;
+} {
+  const penta: Penta = [0, 0, 0, 0, 0];
+  const wdl: WDL = [0, 0, 0];
+  for (const gamePair of gamePairs) {
+    const result1 = getResultForGame(gamePair[0], engineId);
+    const result2 = getResultForGame(gamePair[1], engineId);
+
+    if (result1 !== "tbd") {
+      const score1 = scoreFromResult(result1);
+      if (score1 === 1) {
+        wdl[0] += 1;
+      } else if (score1 === 0) {
+        wdl[1] += 1;
+      } else {
+        wdl[2] += 1;
+      }
+    }
+
+    if (result2 !== "tbd") {
+      const score2 = scoreFromResult(result2);
+      if (score2 === 1) {
+        wdl[0] += 1;
+      } else if (score2 === 0) {
+        wdl[1] += 1;
+      } else {
+        wdl[2] += 1;
+      }
+    }
+
+    if (result1 === "tbd" || result2 === "tbd") {
+      continue;
+    }
+
+    const pairScore = scoreFromResult(result1) + scoreFromResult(result2);
+
+    if (pairScore === -2) {
+      penta[0] += 1;
+    } else if (pairScore === -1) {
+      penta[1] += 1;
+    } else if (pairScore === 0) {
+      penta[2] += 1;
+    } else if (pairScore === 1) {
+      penta[3] += 1;
+    } else {
+      penta[4] += 1;
+    }
+  }
+
+  return { penta, wdl };
+}
+
+function formatPenta(penta: Penta): string {
+  return penta.join(", ");
+}
+
 export function Crosstable({ engines, cccEvent, onClose }: CrosstableProps) {
   const allGames = [
     ...cccEvent.tournamentDetails.schedule.past,
@@ -21,7 +234,9 @@ export function Crosstable({ engines, cccEvent, onClose }: CrosstableProps) {
       <tbody>
         <tr>
           <td>
-            <button onClick={onClose}>Close</button>
+            <button className="closeButton" onClick={onClose}>
+              Close
+            </button>
           </td>
           {engines.map((engine, i) => (
             <td key={engine.id}>
@@ -35,80 +250,64 @@ export function Crosstable({ engines, cccEvent, onClose }: CrosstableProps) {
               #{i + 1}. {engine.name}
             </td>
             {engines.map((engine2) => {
+              if (engine.id === engine2.id) {
+                return <td key={engine2.id}>-</td>;
+              }
+
               const games = allGames.filter(
                 (game) =>
                   (game.blackId === engine.id && game.whiteId === engine2.id) ||
                   (game.whiteId === engine.id && game.blackId === engine2.id)
               );
-              const gamePairs: [CCCGame, CCCGame][] = [];
-              for (let i = 0; i < allGames.length; i += 2) {
-                gamePairs.push(games.slice(i, i + 2) as [CCCGame, CCCGame]);
+
+              const gamePairs: CCCGame[][] = [];
+              for (let gameIndex = 0; gameIndex < games.length; gameIndex += 2) {
+                gamePairs.push(games.slice(gameIndex, gameIndex + 2));
               }
+
+              const completeGamePairs = gamePairs.filter(
+                (gamePair): gamePair is [CCCGame, CCCGame] => gamePair.length > 1
+              );
+
+              const { penta, wdl } = calculatePentaAndWDL(
+                completeGamePairs,
+                engine.id
+              );
+              const elo = calculateEloAndMargin(wdl);
+
               return (
-                <td key={engine2.id}>
+                <td key={engine2.id} className="h2hCell">
+                  <div className="h2hStats">
+                    <span
+                      className="pentaStat"
+                      title="Penta (0-2): LL, LD, WL/DD, WD, WW"
+                    >
+                      P: {formatPenta(penta)}
+                    </span>
+                    <span className={`eloStat elo ${elo.className}`}>
+                      Elo: {elo.text}
+                    </span>
+                  </div>
+
                   <div className="h2h">
-                    {gamePairs
-                      .filter((gamePair) => gamePair.length > 1)
-                      .map((gamePair) => {
-                        const whiteWin1 =
-                          engine.id === gamePair[0].whiteId ? "win" : "loss";
-                        const blackWin1 =
-                          engine.id === gamePair[0].blackId ? "win" : "loss";
-                        const result1 = !gamePair[0].outcome
-                          ? "tbd"
-                          : gamePair[0].outcome === "1-0"
-                            ? whiteWin1
-                            : gamePair[0].outcome === "0-1"
-                              ? blackWin1
-                              : "draw";
+                    {completeGamePairs.map((gamePair) => {
+                      const result1 = getResultForGame(gamePair[0], engine.id);
+                      const result2 = getResultForGame(gamePair[1], engine.id);
 
-                        const whiteWin2 =
-                          engine.id === gamePair[1].whiteId ? "win" : "loss";
-                        const blackWin2 =
-                          engine.id === gamePair[1].blackId ? "win" : "loss";
-                        const result2 = !gamePair[0].outcome
-                          ? "tbd"
-                          : gamePair[1].outcome === "1-0"
-                            ? whiteWin2
-                            : gamePair[1].outcome === "0-1"
-                              ? blackWin2
-                              : "draw";
+                      const pairResult = pairClassFromResults(result1, result2);
 
-                        const text1 =
-                          result1 === "tbd"
-                            ? "-"
-                            : result1 === "win"
-                              ? "1"
-                              : result1 === "loss"
-                                ? "0"
-                                : "½";
-                        const text2 =
-                          result2 === "tbd"
-                            ? "-"
-                            : result2 === "win"
-                              ? "1"
-                              : result2 === "loss"
-                                ? "0"
-                                : "½";
-
-                        const pairResult =
-                          (result1 === "win" && result2 !== "loss") ||
-                          (result2 === "win" && result1 !== "loss")
-                            ? "win"
-                            : (result1 === "loss" && result2 !== "win") ||
-                                (result2 === "loss" && result1 !== "win")
-                              ? "loss"
-                              : "";
-                        return (
-                          <span
-                            key={gamePair[0].gameNr}
-                            className={"gamePair " + pairResult}
-                          >
-                            <span className={result1}>{text1}</span>
-                            <span className={result2}>{text2}</span>
-                          </span>
-                        );
-                      })}
+                      return (
+                        <span
+                          key={gamePair[0].gameNr}
+                          className={["gamePair", pairResult]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <span className={result1}>{textFromResult(result1)}</span>
+                          <span className={result2}>{textFromResult(result2)}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                 </td>
               );
