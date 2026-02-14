@@ -14,8 +14,6 @@ export class StockfishWorker implements IEngineWorker {
     this.postMessage("setoption name Threads value " + threads);
     this.postMessage("isready");
     this.postMessage("ucinewgame");
-
-    console.log(hash, threads)
   }
 
   public isReady() {

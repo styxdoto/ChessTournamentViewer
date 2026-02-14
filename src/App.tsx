@@ -89,15 +89,22 @@ function App() {
 
   const lastBoardUpdateRef = useRef(new Date().getTime());
 
-  function getCurrentLiveInfos(offset: number = -1) {
-    if (liveInfosRef.current.black.at(currentMoveNumber.current)) {
+  function getCurrentLiveInfos() {
+    const gameAtTurn = getGameAtMoveNumber(
+      game.current,
+      currentMoveNumber.current
+    );
+    const ply =
+      2 * gameAtTurn.moveNumber() - (gameAtTurn.turn() === "w" ? 1 : 0) - 1;
+
+    if (liveInfosRef.current.black.at(ply)) {
       const liveInfoBlack = liveInfosRef.current.black.at(
         currentMoveNumber.current
       );
       const liveInfoWhite = liveInfosRef.current.white.at(
         currentMoveNumber.current === -1
           ? -1
-          : Math.max(0, currentMoveNumber.current + offset)
+          : Math.max(0, currentMoveNumber.current - 1)
       );
       const liveInfoKibitzer =
         liveInfosRef.current.kibitzer.at(
@@ -113,7 +120,7 @@ function App() {
       const liveInfoBlack = liveInfosRef.current.black.at(
         currentMoveNumber.current === -1
           ? -1
-          : Math.max(0, currentMoveNumber.current + offset)
+          : Math.max(0, currentMoveNumber.current - 1)
       );
       const liveInfoWhite = liveInfosRef.current.white.at(
         currentMoveNumber.current
@@ -145,7 +152,7 @@ function App() {
     const arrows: DrawShape[] = [];
 
     const { liveInfoBlack, liveInfoKibitzer, liveInfoWhite } =
-      getCurrentLiveInfos(game.current.getHeaders()["Termination"] ? 1 : -1);
+      getCurrentLiveInfos();
 
     let moveWhite: string | null = null;
     if (liveInfoWhite) {
@@ -402,10 +409,43 @@ function App() {
 
   const engines = useMemo(() => {
     if (!cccEvent?.tournamentDetails?.engines) return [];
-    return [...cccEvent.tournamentDetails.engines].sort(
-      (a, b) => Number(b.points) - Number(a.points)
-    );
+
+    return cccEvent.tournamentDetails.engines
+      .map((engine) => {
+        const playedGames = cccEvent.tournamentDetails.schedule.past.filter(
+          (game) => game.blackId === engine.id || game.whiteId === engine.id
+        );
+        const points = playedGames.reduce((prev, cur) => {
+          if (cur.blackId === engine.id) {
+            switch (cur.outcome) {
+              case "1-0":
+                return prev + 0.0;
+              case "0-1":
+                return prev + 1.0;
+              case "1/2-1/2":
+                return prev + 0.5;
+              default:
+                return prev;
+            }
+          } else {
+            switch (cur.outcome) {
+              case "0-1":
+                return prev + 0.0;
+              case "1-0":
+                return prev + 1.0;
+              case "1/2-1/2":
+                return prev + 0.5;
+              default:
+                return prev;
+            }
+          }
+        }, 0);
+        const perf = ((points / playedGames.length) * 100).toFixed(2);
+        return { ...engine, perf: String(perf), points: String(points) };
+      })
+      .sort((a, b) => Number(b.points) - Number(a.points));
   }, [cccEvent]);
+
   const white = engines.find(
     (engine) => engine.name === game.current.getHeaders()["White"]
   );
@@ -509,7 +549,7 @@ function App() {
 
       <div className="standingsWindow">
         <h4>Standings</h4>
-        {white && black ? (
+        {white && black && cccEvent ? (
           <>
             <button onClick={() => setPopupState("crosstable")}>
               Show Crosstable
