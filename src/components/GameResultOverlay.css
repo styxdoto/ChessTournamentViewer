@@ -1,0 +1,23 @@
+.gameResultOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--board-size) + 1px);
+  height: calc(var(--board-size) + 1px);
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 50%);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gameResultOverlay .result {
+  font-size: 100px;
+  font-weight: bold;
+}
+
+.gameResultOverlay .termination {
+  font-size: 20px;
+}

@@ -111,6 +111,12 @@ body:has(.popup) {
   gap: 0.5rem;
 }
 
+.boardWindow {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
 .boardWindow .board {
   width: var(--board-size);
   height: var(--board-size);

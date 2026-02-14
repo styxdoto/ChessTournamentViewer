@@ -100,6 +100,14 @@ type CCCEvent = { id: number; name: string; tc: TimeControl };
 
 type CCCEventsListUpdate = { type: "eventsListUpdate"; events: CCCEvent[] };
 
+type CCCResult = {
+  type: "result";
+  reason: string;
+  score: string;
+  whiteName: string;
+  blackName;
+};
+
 type EngineWindowProps = {
   white?: CCCEngine;
   black?: CCCEngine;
@@ -117,5 +125,5 @@ export type CCCMessage =
   | CCCClocks
   | CCCEventUpdate
   | CCCGameUpdate
-  | CCCEventsListUpdate;
-
+  | CCCEventsListUpdate
+  | CCCResult;

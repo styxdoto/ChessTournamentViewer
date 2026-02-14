@@ -40,6 +40,7 @@ import { EngineWindow } from "./components/EngineWindow";
 import { EngineMinimal } from "./components/EngineMinimal";
 import { Chess960, type Square } from "./chess.js/chess";
 import { Chess } from "./chess.js/chess";
+import { GameResultOverlay } from "./components/GameResultOverlay";
 
 const CLOCK_UPDATE_MS = 25;
 
@@ -120,7 +121,9 @@ function App() {
     let fen = game.current.fen();
     let turn = game.current.turn();
     if (currentMoveNumber.current !== -1) {
-      const gameCopy = new Chess960(game.current.getHeaders()["FEN"] ?? new Chess().fen());
+      const gameCopy = new Chess960(
+        game.current.getHeaders()["FEN"] ?? new Chess().fen()
+      );
       for (let i = 0; i < currentMoveNumber.current; i++) {
         gameCopy.move(history[i].san, { strict: false });
       }
@@ -277,6 +280,10 @@ function App() {
         updateBoard();
 
         break;
+
+      case "result":
+        game.current.setHeader("Termination", msg.reason);
+        game.current.setHeader("Result", msg.score);
     }
   }
 
@@ -378,6 +385,11 @@ function App() {
     (engine) => engine.name === game.current.getHeaders()["Black"]
   );
 
+  const pgnHeaders = game.current.getHeaders();
+  const termination =
+    cccGame?.gameDetails?.termination ?? pgnHeaders["Termination"];
+  const result = pgnHeaders["Result"];
+
   return (
     <div className="app">
       {popupOpen && (
@@ -432,6 +444,10 @@ function App() {
           placeholder={"White"}
           className="borderRadiusBottom"
         />
+
+        {termination && result && currentMoveNumber.current === -1 && (
+          <GameResultOverlay result={result} termination={termination} />
+        )}
       </div>
 
       <div className="movesWindow">

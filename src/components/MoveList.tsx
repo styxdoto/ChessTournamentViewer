@@ -65,7 +65,7 @@ const MoveList = memo(
         <div className="moveList" ref={moveListRef}>
           {moves.map((move, i) => {
             const moveClass =
-              i === currentMoveNumber ||
+              i + 1 === currentMoveNumber ||
               (currentMoveNumber === -1 && i === moves.length - 1)
                 ? " currentMove"
                 : "";
